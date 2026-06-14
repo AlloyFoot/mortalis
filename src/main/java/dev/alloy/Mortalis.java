@@ -1,6 +1,9 @@
 package dev.alloy;
 
 import dev.alloy.item.ModItems;
+import dev.alloy.event.ModEvents;
+import dev.alloy.command.ModCommands;
+import dev.alloy.soul.SoulManager;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +18,9 @@ public class Mortalis implements ModInitializer {
 		LOGGER.info("Mortalis loading...");
 
 		ModItems.register();
+		ModCommands.register();
+		ModEvents.register();
+		SoulManager.loadSouls();
 
 		LOGGER.info("Mortalis loaded successfully.");
 	}
