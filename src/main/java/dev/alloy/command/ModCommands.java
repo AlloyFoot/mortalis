@@ -14,8 +14,6 @@ public class ModCommands {
             registerHelp(dispatcher);
             registerSouls(dispatcher);
         });
-
-
     }
 
     private static void registerHelp(CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -34,11 +32,9 @@ public class ModCommands {
                 .executes(context -> {
 
                     var player = context.getSource().getPlayer();
+                    var server = context.getSource().getServer();
 
-                    int souls = SoulManager.SOULS.getOrDefault(
-                            player.getUuid(),
-                            1
-                    );
+                    int souls = SoulManager.getSouls(server, player.getUuid());
 
                     player.sendMessage(
                             Text.literal("You have " + souls + " souls.")

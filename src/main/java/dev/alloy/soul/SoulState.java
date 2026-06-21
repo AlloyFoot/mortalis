@@ -1,6 +1,7 @@
 package dev.alloy.soul;
 
-import net.minecraft.nbt.NbtCompound;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.world.PersistentState;
 
 import java.util.HashMap;
@@ -11,28 +12,27 @@ public class SoulState extends PersistentState {
 
     public Map<UUID, Integer> souls = new HashMap<>();
 
-    public static SoulState createFromNbt(NbtCompound nbt) {
-        SoulState state = new SoulState();
+    public static final Codec<SoulState> CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
+                    Codec.unboundedMap(Codec.STRING, Codec.INT)
+                            .fieldOf("souls")
+                            .forGetter(state -> {
+                                Map<String, Integer> map = new HashMap<>();
+                                state.souls.forEach((k, v) -> map.put(k.toString(), v));
+                                return map;
+                            })
+            ).apply(instance, map -> {
+                SoulState state = new SoulState();
 
-        NbtCompound soulsNbt = nbt.getCompound("souls");
+                map.forEach((k, v) ->
+                        state.souls.put(UUID.fromString(k), v)
+                );
 
-        for (String key : soulsNbt.getKeys()) {
-            state.souls.put(UUID.fromString(key), soulsNbt.getInt(key));
-        }
+                return state;
+            })
+    );
 
-        return state;
-    }
-
-    @Override
-    public NbtCompound writeNbt(NbtCompound nbt) {
-        NbtCompound soulsNbt = new NbtCompound();
-
-        for (Map.Entry<UUID, Integer> entry : souls.entrySet()) {
-            soulsNbt.putInt(entry.getKey().toString(), entry.getValue());
-        }
-
-        nbt.put("souls", soulsNbt);
-
-        return nbt;
+    public SoulState() {
+        System.out.println("SoulState CREATED (new instance)");
     }
 }

@@ -1,9 +1,9 @@
 package dev.alloy.event;
 
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.minecraft.server.network.ServerPlayerEntity;
 import dev.alloy.soul.SoulManager;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
@@ -15,59 +15,60 @@ public class ModEvents {
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 
-            String playerName = handler.getPlayer().getName().getString();
+            var player = handler.getPlayer();
+            UUID id = player.getUuid();
 
-            UUID id = handler.getPlayer().getUuid();
-
-            SoulManager.SOULS.putIfAbsent(id, 1);
-
-            System.out.println(playerName + " is now mortal.");
-
+            if (SoulManager.getSouls(server, id) <= 0) {
+                player.sendMessage(
+                        Text.literal("You are soulless. Get your soul back to eliminate mortality.")
+                                .formatted(Formatting.DARK_RED)
+                );
+            }
         });
 
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> {
 
+
+
             if (entity instanceof ServerPlayerEntity player) {
 
+                var server = player.getEntityWorld().getServer();
                 UUID id = player.getUuid();
 
-                int souls = SoulManager.SOULS.getOrDefault(id, 1);
+                SoulManager.removeSoul(server, id);
 
-                souls--;
+                int souls = SoulManager.getSouls(server, id);
 
-                SoulManager.SOULS.put(id, souls);
-
-                System.out.println(
-                        player.getName().getString()
-                                + " has "
-                                + souls
-                                + " souls remaining."
-                );
+                System.out.println(player.getName().getString() + " has " + souls + " souls remaining.");
 
                 player.sendMessage(
-                        Text.literal("You have " + souls + " souls remaining.").formatted(Formatting.GOLD)
+                        Text.literal("You have " + souls + " souls remaining.")
+                                .formatted(Formatting.GOLD)
                 );
+
+                if (souls == 0) {
+
+                    System.out.println(player.getName().getString() + " is soulless.");
+
+                    player.sendMessage(
+                            Text.literal("Your soul has been lost.")
+                                    .formatted(Formatting.DARK_RED, Formatting.BOLD)
+                    );
+                }
 
                 if (souls < 0) {
 
-                    System.out.println(
-                            player.getName().getString()
-                                    + " has run out of souls."
+                    System.out.println(player.getName().getString() + " is banned.");
+
+                    player.sendMessage(
+                            Text.literal("You have died without a soul. You have been banned.")
+                                    .formatted(Formatting.BLACK, Formatting.BOLD)
                     );
-
                 }
-
-                player.sendMessage(
-                        Text.literal("Your final soul has been lost.").formatted(Formatting.DARK_RED, Formatting.BOLD)
-                );
 
                 String cause = damageSource.getName();
 
-                System.out.println(
-                        player.getName().getString()
-                                + " died from "
-                                + cause
-                );
+                System.out.println(player.getName().getString() + " died from " + cause);
             }
         });
     }
